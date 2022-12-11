@@ -1,0 +1,61 @@
+name: 'Deploy DEV environment'
+
+on:
+  push:
+    branches:
+    - feat/**
+
+  workflow_dispatch:
+
+jobs:
+  deploy_feat:
+    name: 'Deploy environment'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    - name: Public IP
+      id: ip
+      uses: haythem/public-ip@v1.2
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: 14.17.1
+    - uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: v1.3.5
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-south-1
+    
+    - name: Terraform version
+      run: terraform -v
+
+    - name: Terraform Format
+      run: terraform fmt -recursive
+      working-directory: ./terraform
+    
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ./terraform
+
+    - name: Terraform Plan
+      run: terraform plan
+      working-directory: ./terraform
+
+    - name: Terraform Validate
+      run: terraform validate
+      working-directory: ./terraform
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+        echo "### exit code"
+        echo $?
+      working-directory: ./terraform
